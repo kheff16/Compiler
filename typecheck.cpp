@@ -172,8 +172,8 @@ void TypeCheck::visitMethodNode(MethodNode* node) {
   node->basetype = node->type->basetype;
 
   //TODO: Is setting objectClassName right when we don't know the exact basetype?
-  c.baseType = node->basetype;
-  c.objectClassName = node->objectClassName;
+  c.baseType = node->type->basetype;
+  c.objectClassName = node->type->objectClassName;
   
   m.returnType = c;
 

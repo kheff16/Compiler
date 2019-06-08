@@ -4,6 +4,18 @@
 // you will complete to generate the x86 assembly code. Not
 // all functions must have code, many may be left empty.
 
+
+// Start of helper functions
+int classSize(CodeGenerator *cg, ClassInfo classInfo) {
+    if (classInfo.superClassName == "") {
+        return classInfo.membersSize;
+    }
+    return classInfo.membersSize + classSize(cg, cg->classTable->at(classInfo.superClassName));
+}
+
+
+// End of helper functions
+
 void CodeGenerator::visitProgramNode(ProgramNode* node) {
     // WRITEME: Replace with code if necessary
 }
@@ -42,62 +54,232 @@ void CodeGenerator::visitCallNode(CallNode* node) {
 
 void CodeGenerator::visitIfElseNode(IfElseNode* node) {
     // WRITEME: Replace with code if necessary
+    auto elseLabel = nextLabel();
+    auto endLabel = nextLabel();
+    std::cout << "#### IF ELSE" << std::endl;
+    node->expression->accept(this);
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   mov  $0, %ebx" << std::endl;
+    std::cout << "   cmp  %eax, %ebx" << std::endl;
+    std::cout << "   je " << elseLabel << std::endl;
+    // Go through the true statements
+    if(node->statement_list_1) {
+        for(std::list<StatementNode*>::iterator iter = node->statement_list_1->begin();
+            iter != node->statement_list_1->end(); iter++) {
+            (*iter)->accept(this);
+        }
+    }
+    std::cout << "   jmp " << endLabel << std::endl;
+    std::cout << elseLabel << ":" << std::endl;
+    // Go through the false statements
+    if(node->statement_list_2) {
+        for(std::list<StatementNode*>::iterator iter = node->statement_list_2->begin();
+            iter != node->statement_list_2->end(); iter++) {
+            (*iter)->accept(this);
+        }    
+    }
+    std::cout << endLabel << ":" << std::endl;
 }
 
 void CodeGenerator::visitWhileNode(WhileNode* node) {
     // WRITEME: Replace with code if necessary
+    auto startLoopLabel = nextLabel();
+    auto endLabel = nextLabel();
+    std::cout << "#### WHILE" << std::endl;
+    node->expression->accept(this);
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   mov  $0, %ebx" << std::endl;
+    std::cout << "   cmp  %eax, %ebx" << std::endl;
+    std::cout << "   je " << endLabel << std::endl;
+    std::cout << startLoopLabel<< ":" << std::endl;
+    for(std::list<StatementNode*>::iterator iter = node->statement_list->begin();
+        iter != node->statement_list->end(); iter++) {
+        (*iter)->accept(this);
+    }
+    node->expression->accept(this);
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   mov  $1, %ebx" << std::endl;
+    std::cout << "   cmp  %eax, %ebx" << std::endl;
+    std::cout << "   je " << startLoopLabel << std::endl;
+    std::cout << endLabel << ":" << std::endl;
+
 }
 
 void CodeGenerator::visitPrintNode(PrintNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### PRINT" << std::endl;
+    node->visit_children(this);
+    std::cout << "   push $printstr" << std::endl;
+    std::cout << "   call printf" << std::endl;
+    std::cout << "   add  $8, %esp" << std::endl;
+
+    std::cout << "#### END OF PRINT" << std::endl;
 }
 
 void CodeGenerator::visitDoWhileNode(DoWhileNode* node) {
     // WRITEME: Replace with code if necessary
+    auto whileTrueLabel = nextLabel();
+    auto endLabel = nextLabel();
+    std::cout << "#### DO-WHILE" << std::endl;
+    std::cout << whileTrueLabel<< ":" << std::endl;
+    for(std::list<StatementNode*>::iterator iter = node->statement_list->begin();
+        iter != node->statement_list->end(); iter++) {
+        (*iter)->accept(this);
+    }
+    node->expression->accept(this);
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   mov  $0, %ebx" << std::endl;
+    std::cout << "   cmp  %eax, %ebx" << std::endl;
+    std::cout << "   jne " << whileTrueLabel << std::endl;
+    std::cout << endLabel << ":" << std::endl;
 }
 
 void CodeGenerator::visitPlusNode(PlusNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### ADD" << std::endl;
+    node->visit_children(this);
+    std::cout << "   pop  %ebx" << std::endl;
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   add  %ebx, %eax" << std::endl;
+    std::cout << "   push %eax" << std::endl;
+
+    std::cout << "#### END OF ADD" << std::endl;
 }
 
 void CodeGenerator::visitMinusNode(MinusNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### MINUS" << std::endl;
+    node->visit_children(this);
+    std::cout << "   pop  %ebx" << std::endl;
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   sub  %ebx, %eax" << std::endl;
+    std::cout << "   push %eax" << std::endl;
+
+    std::cout << "#### END OF MINUS" << std::endl;
 }
 
 void CodeGenerator::visitTimesNode(TimesNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### MULTIPLY" << std::endl;
+    node->visit_children(this);
+    std::cout << "   pop  %ebx" << std::endl;
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   imul %ebx, %eax" << std::endl;
+    std::cout << "   push %eax" << std::endl;
+
+    std::cout << "#### END OF MULTIPLY" << std::endl;
 }
 
 void CodeGenerator::visitDivideNode(DivideNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### DIVIDE" << std::endl;
+    node->visit_children(this);
+    std::cout << "   pop  %ebx" << std::endl;
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   cdq" << std::endl;
+    std::cout << "   idiv %ebx" << std::endl;
+    std::cout << "   push %eax" << std::endl;
+
+    std::cout << "#### END OF DIVIDE" << std::endl;
 }
 
 void CodeGenerator::visitGreaterNode(GreaterNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### GREATER THAN" << std::endl;
+    node->visit_children(this);
+    auto trueLabel = nextLabel();
+    auto endLabel = nextLabel();
+    std::cout << "   pop  %ebx" << std::endl;
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   cmp  %ebx, %eax" << std::endl;
+    std::cout << "   jg   " << trueLabel << std::endl;
+    std::cout << "   push $0" << std::endl;
+    std::cout << "   jmp  " << endLabel << std::endl;
+    std::cout << trueLabel << ":" << std::endl;
+    std::cout << "   push $1" << std::endl;
+    std::cout << endLabel << ":" << std::endl;
+
+    std::cout << "#### END OF GREATER THAN" << std::endl;
 }
 
 void CodeGenerator::visitGreaterEqualNode(GreaterEqualNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### GREATER THAN OR EQUAL" << std::endl;
+    node->visit_children(this);
+    auto trueLabel = nextLabel();
+    auto endLabel = nextLabel();
+    std::cout << "   pop  %ebx" << std::endl;
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   cmp  %ebx, %eax" << std::endl;
+    std::cout << "   jge   " << trueLabel << std::endl;
+    std::cout << "   push $0" << std::endl;
+    std::cout << "   jmp  " << endLabel << std::endl;
+    std::cout << trueLabel << ":" << std::endl;
+    std::cout << "   push $1" << std::endl;
+    std::cout << endLabel << ":" << std::endl;
+
+    std::cout << "#### END OF GREATER THAN OR EQUAL" << std::endl;
 }
 
 void CodeGenerator::visitEqualNode(EqualNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### EQUAL" << std::endl;
+    node->visit_children(this);
+    auto trueLabel = nextLabel();
+    auto endLabel = nextLabel();
+    std::cout << "   pop  %ebx" << std::endl;
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   cmp  %eax, %ebx" << std::endl;
+    std::cout << "   je   " << trueLabel << std::endl;
+    std::cout << "   push $0" << std::endl;
+    std::cout << "   jmp  " << endLabel << std::endl;
+    std::cout << trueLabel << ":" << std::endl;
+    std::cout << "   push $1" << std::endl;
+    std::cout << endLabel << ":" << std::endl;
+    
+    std::cout << "#### END OF EQUAL" << std::endl;
 }
 
 void CodeGenerator::visitAndNode(AndNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### AND OPERATOR" << std::endl;
+    node->visit_children(this);
+    std::cout << "   pop  %ebx" << std::endl;
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   andl %ebx, %eax" << std::endl;
+    std::cout << "   push %eax" << std::endl;
+    std::cout << "#### END OF AND" << std::endl;
 }
 
 void CodeGenerator::visitOrNode(OrNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### OR OPERATOR" << std::endl;
+    node->visit_children(this);
+    std::cout << "   pop  %ebx" << std::endl;
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   orl  %ebx, %eax" << std::endl;
+    std::cout << "   push %eax" << std::endl;
+    std::cout << "#### END OF OR" << std::endl;
 }
 
 void CodeGenerator::visitNotNode(NotNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### NOT OPERATOR" << std::endl;
+    node->visit_children(this);
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   xor  $1, %eax" << std::endl;
+    std::cout << "   push %eax" << std::endl;
+    std::cout << "#### END OF NOT" << std::endl;
 }
 
 void CodeGenerator::visitNegationNode(NegationNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### NEGATION OPERATOR" << std::endl;
+    node->visit_children(this);
+    std::cout << "   pop  %eax" << std::endl;
+    std::cout << "   neg  %eax" << std::endl;
+    std::cout << "   push %eax" << std::endl;
+    std::cout << "#### END OF NEGATION" << std::endl;
 }
 
 void CodeGenerator::visitMethodCallNode(MethodCallNode* node) {
@@ -114,14 +296,59 @@ void CodeGenerator::visitVariableNode(VariableNode* node) {
 
 void CodeGenerator::visitIntegerLiteralNode(IntegerLiteralNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### INT LIT" << std::endl;
+    std::cout << "   push " << '$' << node->integer->value << std::endl;
+    std::cout << "#### END INT LIT" << std::endl;
 }
 
 void CodeGenerator::visitBooleanLiteralNode(BooleanLiteralNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### BOOL LIT" << std::endl;
+    std::cout << "    push " << '$' << node->integer->value << std::endl;
+    std::cout << "#### END OF BOOL LIT" << std::endl;
 }
 
 void CodeGenerator::visitNewNode(NewNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << "#### NEW OPERATOR" << std::endl;
+    auto classInfo = classTable->at(node->identifier->name);
+    std::cout << "   push $" << classSize(this, classInfo) << std::endl;
+    std::cout << "   call malloc" << std::endl;
+    std::cout << "   add  $4, %esp" << std::endl;
+    std::cout << "   push %eax" << std::endl;
+    
+    if (classInfo.methods->find(node->identifier->name) != classInfo.methods->end()) {
+        std::cout << "#### CALLING CONSTRUCTOR" << std::endl;
+        // Save registers
+        std::cout << "   push %eax" << std::endl;
+        std::cout << "   push %ecx" << std::endl;
+        std::cout << "   push %edx" << std::endl;
+        
+        // Load arguments in C_decl (Can't call visit children, arguments will be in reverse order)
+        if (node->expression_list) {
+            for (auto argument = node->expression_list->rbegin(); argument != node->expression_list->rend(); ++argument) {
+                (*argument)->accept(this);
+            }
+        }
+        
+        // Push self (TODO: Find a better way)
+        std::cout << "   movl " << 4 * (node->expression_list->size()+3) << "(%esp), %eax" << std::endl;
+        std::cout << "   push %eax" << std::endl;
+        
+        // Call constructor
+        std::cout << "   call " << node->identifier->name << "_" << node->identifier->name << std::endl;
+        
+        // Clear arguments and self from stack
+        std::cout << "   add $" << 4 * (node->expression_list->size() + 1) << ", %esp" << std::endl;
+        
+        // Restore registers
+        std::cout << "   pop  %edx" << std::endl;
+        std::cout << "   pop  %ecx" << std::endl;
+        std::cout << "   pop  %eax" << std::endl;
+        
+    }
+
+    std::cout << "#### END OF NEW" << std::endl;
 }
 
 void CodeGenerator::visitIntegerTypeNode(IntegerTypeNode* node) {
