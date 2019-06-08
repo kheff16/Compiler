@@ -13,6 +13,9 @@ int classSize(CodeGenerator *cg, ClassInfo classInfo) {
     return classInfo.membersSize + classSize(cg, cg->classTable->at(classInfo.superClassName));
 }
 
+void p(std::string a){
+    std::cout << a << std::endl;
+}
 
 // End of helper functions
 
@@ -52,6 +55,18 @@ void CodeGenerator::visitDeclarationNode(DeclarationNode* node) {
 
 void CodeGenerator::visitReturnStatementNode(ReturnStatementNode* node) {
     // WRITEME: Replace with code if necessary
+
+    //Execute/visit the expression
+
+
+
+    //Take result of last expression from top of stack and place into %eax
+
+
+
+    // %eax will be used to return values from functions.
+
+
 }
 
 void CodeGenerator::visitAssignmentNode(AssignmentNode* node) {
@@ -306,59 +321,14 @@ void CodeGenerator::visitVariableNode(VariableNode* node) {
 
 void CodeGenerator::visitIntegerLiteralNode(IntegerLiteralNode* node) {
     // WRITEME: Replace with code if necessary
-    std::cout << "#### INT LIT" << std::endl;
-    std::cout << "   push " << '$' << node->integer->value << std::endl;
-    std::cout << "#### END INT LIT" << std::endl;
 }
 
 void CodeGenerator::visitBooleanLiteralNode(BooleanLiteralNode* node) {
     // WRITEME: Replace with code if necessary
-    std::cout << "#### BOOL LIT" << std::endl;
-    std::cout << "    push " << '$' << node->integer->value << std::endl;
-    std::cout << "#### END OF BOOL LIT" << std::endl;
 }
 
 void CodeGenerator::visitNewNode(NewNode* node) {
     // WRITEME: Replace with code if necessary
-    std::cout << "#### NEW OPERATOR" << std::endl;
-    auto classInfo = classTable->at(node->identifier->name);
-    std::cout << "   push $" << classSize(this, classInfo) << std::endl;
-    std::cout << "   call malloc" << std::endl;
-    std::cout << "   add  $4, %esp" << std::endl;
-    std::cout << "   push %eax" << std::endl;
-    
-    if (classInfo.methods->find(node->identifier->name) != classInfo.methods->end()) {
-        std::cout << "#### CALLING CONSTRUCTOR" << std::endl;
-        // Save registers
-        std::cout << "   push %eax" << std::endl;
-        std::cout << "   push %ecx" << std::endl;
-        std::cout << "   push %edx" << std::endl;
-        
-        // Load arguments in C_decl (Can't call visit children, arguments will be in reverse order)
-        if (node->expression_list) {
-            for (auto argument = node->expression_list->rbegin(); argument != node->expression_list->rend(); ++argument) {
-                (*argument)->accept(this);
-            }
-        }
-        
-        // Push self (TODO: Find a better way)
-        std::cout << "   movl " << 4 * (node->expression_list->size()+3) << "(%esp), %eax" << std::endl;
-        std::cout << "   push %eax" << std::endl;
-        
-        // Call constructor
-        std::cout << "   call " << node->identifier->name << "_" << node->identifier->name << std::endl;
-        
-        // Clear arguments and self from stack
-        std::cout << "   add $" << 4 * (node->expression_list->size() + 1) << ", %esp" << std::endl;
-        
-        // Restore registers
-        std::cout << "   pop  %edx" << std::endl;
-        std::cout << "   pop  %ecx" << std::endl;
-        std::cout << "   pop  %eax" << std::endl;
-        
-    }
-
-    std::cout << "#### END OF NEW" << std::endl;
 }
 
 void CodeGenerator::visitIntegerTypeNode(IntegerTypeNode* node) {
