@@ -18,10 +18,20 @@ int classSize(CodeGenerator *cg, ClassInfo classInfo) {
 
 void CodeGenerator::visitProgramNode(ProgramNode* node) {
     // WRITEME: Replace with code if necessary
+    std::cout << ".data" << std::endl;
+    std::cout << "printstr: .asciz \"%d\\n\"" << std::endl;
+    std::cout << std::endl;
+    std::cout << ".text" << std::endl;
+    std::cout << ".globl Main_main" << std::endl;
+    node->visit_children(this);
+    std::cout << std::endl;
 }
 
 void CodeGenerator::visitClassNode(ClassNode* node) {
     // WRITEME: Replace with code if necessary
+    currentClassName = node->identifier_1->name;
+    currentClassInfo = classTable->at(currentClassName);
+    node->visit_children(this);
 }
 
 void CodeGenerator::visitMethodNode(MethodNode* node) {
