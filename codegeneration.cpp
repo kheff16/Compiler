@@ -21,13 +21,13 @@ void p(std::string a){
 
 void CodeGenerator::visitProgramNode(ProgramNode* node) {
     // WRITEME: Replace with code if necessary
-    std::cout << ".data" << std::endl;
-    std::cout << "printstr: .asciz \"%d\\n\"" << std::endl;
-    std::cout << std::endl;
-    std::cout << ".text" << std::endl;
-    std::cout << ".globl Main_main" << std::endl;
+    p(".data");
+    p("printstr: .asciz \"%d\\n\"")
+    p("");
+    p(".text");
+    p(".globl Main_main");
     node->visit_children(this);
-    std::cout << std::endl;
+    p("");
 }
 
 void CodeGenerator::visitClassNode(ClassNode* node) {
@@ -57,16 +57,15 @@ void CodeGenerator::visitReturnStatementNode(ReturnStatementNode* node) {
     // WRITEME: Replace with code if necessary
 
     //Execute/visit the expression
-
-
-
+    node->expression->accept(this);
+    p("#### RETURN STATEMENT");
     //Take result of last expression from top of stack and place into %eax
-
-
+    p(" pop %eax");
+    
 
     // %eax will be used to return values from functions.
-
-
+    // Sooooo that's it!!!!
+    p("#### END OF RETURN STATEMENT");
 }
 
 void CodeGenerator::visitAssignmentNode(AssignmentNode* node) {
@@ -104,6 +103,7 @@ void CodeGenerator::visitIfElseNode(IfElseNode* node) {
         }    
     }
     std::cout << endLabel << ":" << std::endl;
+    p("#### END OF IF ELSE");
 }
 
 void CodeGenerator::visitWhileNode(WhileNode* node) {
