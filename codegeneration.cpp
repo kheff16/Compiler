@@ -93,11 +93,9 @@ void CodeGenerator::visitMethodBodyNode(MethodBodyNode* node) {
 }
 
 void CodeGenerator::visitParameterNode(ParameterNode* node) {
-    // WRITEME: Replace with code if necessary
 }
 
 void CodeGenerator::visitDeclarationNode(DeclarationNode* node) {
-    // WRITEME: Replace with code if necessary
 }
 
 void CodeGenerator::visitReturnStatementNode(ReturnStatementNode* node) {
@@ -107,7 +105,7 @@ void CodeGenerator::visitReturnStatementNode(ReturnStatementNode* node) {
     node->expression->accept(this);
     p("#### RETURN STATEMENT");
     //Take result of last expression from top of stack and place into %eax
-    p(" pop %eax");
+    p("   pop %eax");
     
 
     // %eax will be used to return values from functions.
@@ -117,6 +115,45 @@ void CodeGenerator::visitReturnStatementNode(ReturnStatementNode* node) {
 
 void CodeGenerator::visitAssignmentNode(AssignmentNode* node) {
     // WRITEME: Replace with code if necessary
+    node->visit_children(this);
+    if(node->identifier_2) {
+        std::string className = node->identifier_1->name;
+        std::string memberName = node->identifier_2->name; 
+        p("#### ASSIGNING TO " + memberName + " WHICH BELONGS TO " + className);
+        const VariableInfo classInfo = getLocalVariableInfo(this, className);
+        if(localVar(this, className)) {
+            const int memberOffset = getMemberOffset(this, memberName, classInfo.type.objectClassName);
+            std::cout << "   movl " << classInfo.offset << "(%ebp), %eax" << std::endl; // Load object address into accumulator
+            std::cout << "   pop  %ebx" << std::endl;
+            std::cout << "   movl %ebx, " << memberOffset << "(%eax)" << std::endl; // Store value in the member
+        }
+        else {
+            int classOffset = getMemberOffset(this, className, currentClassName);
+            int memberOffset = getMemberOffset(this, memberName, classInfo.type.objectClassName);
+            std::cout << "   movl " << "8(%ebp), %eax" << std::endl; // Load self address into accumulator
+            std::cout << "   movl " << classOffset << "(%eax), %eax" << std::endl; // Load object address into accumulator
+            std::cout << "   pop  %ebx" << std::endl;;
+            std::cout << "   movl %ebx, " << memberOffset << "(%eax)" << std::endl; // Store value in the member
+        }
+    }
+    // Parameter, local method, or self
+    else {
+        std::string varName = node->identifier_1->name;
+        p("#### ASSIGNING TO " + varName);
+        if(localVar(this, varName)) {
+            VariableInfo v = getLocalVariableInfo(this, varName);
+            std::cout << "   pop  %eax" << std::endl;
+            std::cout << "   movl %eax, " << v.offset << "(%ebp)" << std::endl;
+        }
+        else {
+            const int memberOffset = getMemberOffset(this, varName, currentClassName);
+            std::cout << "   movl " << "8(%ebp), %eax" << std::endl; // Load self address into accumulator
+            std::cout << "   pop  %ebx" << std::endl;
+            std::cout << "   movl %ebx, " << memberOffset << "(%eax)" << std::endl; // Store value in the member
+        }
+    }
+
+    p("#### END OF ASSIGNMENT");
 }
 
 void CodeGenerator::visitCallNode(CallNode* node) {
