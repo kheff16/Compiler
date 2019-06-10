@@ -86,10 +86,69 @@ void CodeGenerator::visitClassNode(ClassNode* node) {
 
 void CodeGenerator::visitMethodNode(MethodNode* node) {
     // WRITEME: Replace with code if necessary
+    currentMethodName = node->identifier->name;
+    currentMethodInfo = currentClassInfo.methods->at(currentMethodName);
+
+    //  Create a label (class name + “_” + method name)
+    std::string label = currentClassName + "_" + currentMethodName;
+    p("#### METHOD START");
+
+    p(label + ": ");
+	// push old ebp
+
+	p("	push %ebp");
+
+    // Set new %ebp(to current %esp) 
+    p("	mov %esp,	%ebp"); // ebp gets value of esp
+
+    // Allocate space for local variables //Subtract from stack pointer //Look into localsSize of MethodInfo
+	p("	sub $" + std::to_string(currentMethodInfo.localsSize) + ", %esp");
+
+    //Save callee-save registers (%ebx, %edi, %esi)
+    	p("	push	%ebx");
+    	p("	push	%edi");
+    	p("	push	%esi");
+
+	node->methodbody->accept(this);
+
+	//Restore callee-saved registers
+	    p("	pop	%esi");
+    	p("	pop	%edi");
+    	p("	pop	%ebx");
+
+	// Deallocate local varsspace by moving %esp to %ebp
+	p("	mov %ebp,	%esp"); // esp gets value of ebp
+
+	//Restore old base pointer by popping old %ebp from the stack
+	p("	pop %ebp");
+
+	//Return using return address (ret instruction)
+	p("	ret");
+
+    p("#### METHOD END");
 }
 
 void CodeGenerator::visitMethodBodyNode(MethodBodyNode* node) {
     // WRITEME: Replace with code if necessary
+
+    //Don’t need to do much; just executes the statements in your function!
+    // if(node->declaration_list) {
+    //     for(std::list<DeclarationNode*>::iterator iter = node->declaration_list->begin();
+    //         iter != node->declaration_list->end(); iter++) {
+    //         (*iter)->accept(this);
+    //     }
+    // }
+
+    if(node->statement_list) {
+        for(std::list<StatementNode*>::iterator iter = node->statement_list->begin();
+            iter != node->statement_list->end(); iter++) {
+            (*iter)->accept(this);
+        }
+    }
+
+    if(node->returnstatement){
+        node->returnstatement->accept(this);
+    }
 }
 
 void CodeGenerator::visitParameterNode(ParameterNode* node) {
@@ -163,13 +222,13 @@ void CodeGenerator::visitCallNode(CallNode* node) {
 
 void CodeGenerator::visitIfElseNode(IfElseNode* node) {
     // WRITEME: Replace with code if necessary
-    auto elseLabel = nextLabel();
-    auto endLabel = nextLabel();
+
     std::cout << "#### IF ELSE" << std::endl;
     node->expression->accept(this);
     std::cout << "   pop  %eax" << std::endl;
     std::cout << "   mov  $0, %ebx" << std::endl;
     std::cout << "   cmp  %eax, %ebx" << std::endl;
+    auto elseLabel = nextLabel();
     std::cout << "   je " << elseLabel << std::endl;
     // Go through the true statements
     if(node->statement_list_1) {
@@ -187,6 +246,7 @@ void CodeGenerator::visitIfElseNode(IfElseNode* node) {
             (*iter)->accept(this);
         }    
     }
+    auto endLabel = nextLabel();
     std::cout << endLabel << ":" << std::endl;
     p("#### END OF IF ELSE");
 }
@@ -222,8 +282,11 @@ void CodeGenerator::visitPrintNode(PrintNode* node) {
     std::cout << "#### PRINT" << std::endl;
     node->visit_children(this);
     std::cout << "   push $printstr" << std::endl;
-    std::cout << "   call printf" << std::endl;
-    std::cout << "   add  $8, %esp" << std::endl;
+    std::cout << "   call printf" << std::endl; 
+
+    // PRETTY SURE printf will pop off call from stack
+
+    std::cout << "   add  $4, %esp" << std::endl;
 
     std::cout << "#### END OF PRINT" << std::endl;
 }
