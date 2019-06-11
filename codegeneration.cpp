@@ -64,6 +64,13 @@ int getMemberOffset(CodeGenerator *cg, std::string member, std::string className
     return memberInfo.offset + superClassOffset;
 }
 
+std::string getLabel() {
+    static int num = 0;
+    std::string label = "Label" + std::to_string(num);
+    num++;
+    return label;
+}
+
 // End of helper functions
 
 void CodeGenerator::visitProgramNode(ProgramNode* node) {
@@ -75,6 +82,7 @@ void CodeGenerator::visitProgramNode(ProgramNode* node) {
     p(".globl Main_main");
     node->visit_children(this);
     p("");
+    p("#### REACHED END OF PROGRAM");
 }
 
 void CodeGenerator::visitClassNode(ClassNode* node) {
@@ -96,34 +104,34 @@ void CodeGenerator::visitMethodNode(MethodNode* node) {
     p(label + ": ");
 	// push old ebp
 
-	p("	push %ebp");
+	p("   push %ebp");
 
     // Set new %ebp(to current %esp) 
-    p("	mov %esp,	%ebp"); // ebp gets value of esp
+    p("   mov %esp, %ebp"); // ebp gets value of esp
 
     // Allocate space for local variables //Subtract from stack pointer //Look into localsSize of MethodInfo
-	p("	sub $" + std::to_string(currentMethodInfo.localsSize) + ", %esp");
+	p("   sub $" + std::to_string(currentMethodInfo.localsSize) + ", %esp");
 
     //Save callee-save registers (%ebx, %edi, %esi)
-    	p("	push	%ebx");
-    	p("	push	%edi");
-    	p("	push	%esi");
+    	p("   push %ebx");
+    	p("	  push %edi");
+    	p("	  push %esi");
 
 	node->methodbody->accept(this);
 
 	//Restore callee-saved registers
-	    p("	pop	%esi");
-    	p("	pop	%edi");
-    	p("	pop	%ebx");
+	    p("	  pop %esi");
+    	p("	  pop %edi");
+    	p("	  pop %ebx");
 
 	// Deallocate local varsspace by moving %esp to %ebp
-	p("	mov %ebp,	%esp"); // esp gets value of ebp
+	p("   mov %ebp, %esp"); // esp gets value of ebp
 
 	//Restore old base pointer by popping old %ebp from the stack
-	p("	pop %ebp");
+	p("	  pop %ebp");
 
 	//Return using return address (ret instruction)
-	p("	ret");
+	p("	  ret");
 
     p("#### METHOD END");
 }
@@ -218,6 +226,9 @@ void CodeGenerator::visitAssignmentNode(AssignmentNode* node) {
 void CodeGenerator::visitCallNode(CallNode* node) {
     // WRITEME: Replace with code if necessary
     node->visit_children(this);
+    p("#### IN CALL NODE");
+    //std::cout << "   add $4, %esp" << std::endl; // return value not used (child node pushes return value on stack)
+    p("#### END CALL NODE");
 }
 
 void CodeGenerator::visitIfElseNode(IfElseNode* node) {
@@ -228,7 +239,8 @@ void CodeGenerator::visitIfElseNode(IfElseNode* node) {
     std::cout << "   pop  %eax" << std::endl;
     std::cout << "   mov  $0, %ebx" << std::endl;
     std::cout << "   cmp  %eax, %ebx" << std::endl;
-    auto elseLabel = nextLabel();
+    auto elseLabel = getLabel();
+    auto endLabel = getLabel();
     std::cout << "   je " << elseLabel << std::endl;
     // Go through the true statements
     if(node->statement_list_1) {
@@ -246,15 +258,14 @@ void CodeGenerator::visitIfElseNode(IfElseNode* node) {
             (*iter)->accept(this);
         }    
     }
-    auto endLabel = nextLabel();
     std::cout << endLabel << ":" << std::endl;
     p("#### END OF IF ELSE");
 }
 
 void CodeGenerator::visitWhileNode(WhileNode* node) {
     // WRITEME: Replace with code if necessary
-    auto startLoopLabel = nextLabel();
-    auto endLabel = nextLabel();
+    auto startLoopLabel = getLabel();
+    auto endLabel = getLabel();
     std::cout << "#### WHILE" << std::endl;
     node->expression->accept(this);
     std::cout << "   pop  %eax" << std::endl;
@@ -286,15 +297,15 @@ void CodeGenerator::visitPrintNode(PrintNode* node) {
 
     // PRETTY SURE printf will pop off call from stack
 
-    std::cout << "   add  $4, %esp" << std::endl;
+    std::cout << "   add $8, %esp" << std::endl;
 
     std::cout << "#### END OF PRINT" << std::endl;
 }
 
 void CodeGenerator::visitDoWhileNode(DoWhileNode* node) {
     // WRITEME: Replace with code if necessary
-    auto whileTrueLabel = nextLabel();
-    auto endLabel = nextLabel();
+    auto whileTrueLabel = getLabel();
+    auto endLabel = getLabel();
     std::cout << "#### DO-WHILE" << std::endl;
     std::cout << whileTrueLabel<< ":" << std::endl;
     for(std::list<StatementNode*>::iterator iter = node->statement_list->begin();
@@ -364,8 +375,8 @@ void CodeGenerator::visitGreaterNode(GreaterNode* node) {
     // WRITEME: Replace with code if necessary
     std::cout << "#### GREATER THAN" << std::endl;
     node->visit_children(this);
-    auto trueLabel = nextLabel();
-    auto endLabel = nextLabel();
+    auto trueLabel = getLabel();
+    auto endLabel = getLabel();
     std::cout << "   pop  %ebx" << std::endl;
     std::cout << "   pop  %eax" << std::endl;
     std::cout << "   cmp  %ebx, %eax" << std::endl;
@@ -383,8 +394,8 @@ void CodeGenerator::visitGreaterEqualNode(GreaterEqualNode* node) {
     // WRITEME: Replace with code if necessary
     std::cout << "#### GREATER THAN OR EQUAL" << std::endl;
     node->visit_children(this);
-    auto trueLabel = nextLabel();
-    auto endLabel = nextLabel();
+    auto trueLabel = getLabel();
+    auto endLabel = getLabel();
     std::cout << "   pop  %ebx" << std::endl;
     std::cout << "   pop  %eax" << std::endl;
     std::cout << "   cmp  %ebx, %eax" << std::endl;
@@ -402,8 +413,8 @@ void CodeGenerator::visitEqualNode(EqualNode* node) {
     // WRITEME: Replace with code if necessary
     std::cout << "#### EQUAL" << std::endl;
     node->visit_children(this);
-    auto trueLabel = nextLabel();
-    auto endLabel = nextLabel();
+    auto trueLabel = getLabel();
+    auto endLabel = getLabel();
     std::cout << "   pop  %ebx" << std::endl;
     std::cout << "   pop  %eax" << std::endl;
     std::cout << "   cmp  %eax, %ebx" << std::endl;

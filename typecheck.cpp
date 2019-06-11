@@ -200,12 +200,15 @@ void TypeCheck::visitClassNode(ClassNode* node) {
     c.superClassName = node->identifier_2->name;
   }
 
+  // NEED TO FIX THIS
+  int *p = new int();
+  c.membersSize = *(p);
 
-  c.membersSize = -(currentMemberOffset) * (c.members->size());
   classTable->insert(std::pair<std::string, ClassInfo> (currentClassName, c));
-
-  node->visit_children(this); // Visits Declaration Node then Method Node
   
+  node->visit_children(this); // Visits Declaration Node then Method Node
+  *p = 4 * c.members->size();
+  classTable->at(currentClassName).membersSize = *p;
   /*
     Set all the tables
     iterate though decl list and call visitDeclNode
